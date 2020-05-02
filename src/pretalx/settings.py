@@ -85,8 +85,10 @@ FALLBACK_APPS = [
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + LOCAL_APPS + FALLBACK_APPS
 
 PLUGINS = []
+plugin_locations = []
 for entry_point in iter_entry_points(group="pretalx.plugin", name=None):
     PLUGINS.append(entry_point.module_name)
+    plugin_locations.append(Path(entry_point.dist.location) / entry_point.module_name)
     INSTALLED_APPS.append(entry_point.module_name)
 
 CORE_MODULES = LOCAL_APPS + [
@@ -312,9 +314,12 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 TIME_ZONE = config.get("locale", "time_zone")
-LOCALE_PATHS = (Path(__file__).resolve().parent / "locale",)
 FORMAT_MODULE_PATH = ["pretalx.common.formats"]
-
+LOCALE_PATHS = [
+    Path(__file__).resolve().parent / "locale",
+]
+for location in plugin_locations:
+    LOCALE_PATHS.append(location / "locale")
 LANGUAGE_CODE = config.get("locale", "language_code")
 LANGUAGES_INFORMATION = {
     "en": {
@@ -348,6 +353,16 @@ LANGUAGES_INFORMATION = {
         "percentage": 81,
     },
 }
+for section in config.sections():
+    if section.startswith("locale:"):
+        code = section.split(":")[-1]
+        data = dict(config.items(section))
+        LANGUAGES_INFORMATION[code] = {
+            "name": data["name"],
+            "natural_name": data["name"],
+            "official": False,
+            "percentage": data.get("percentage"),
+        }
 for code, language in LANGUAGES_INFORMATION.items():
     language["code"] = code
 

@@ -143,6 +143,8 @@ class EventPermissionMiddleware:
             language = language or request.event.locale
 
         translation.activate(language)
+        print("#" * 100)
+        print(language)
         request.LANGUAGE_CODE = translation.get_language()
 
         with suppress(pytz.UnknownTimeZoneError):
